@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>币安Alpha空投九宫格验证模拟器</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; background-color: #f0f0f0; }
+        #grid { display: grid; grid-template-columns: repeat(3, 100px); gap: 10px; margin: 20px auto; }
+        .cell { width: 100px; height: 100px; font-size: 50px; border: 2px solid #ccc; cursor: pointer; display: flex; align-items: center; justify-content: center; background-color: white; }
+        .selected { border-color: green; }
+        #prompt { font-size: 20px; margin-bottom: 10px; }
+        #timer { font-size: 18px; color: red; }
+        #result { font-size: 18px; margin-top: 20px; }
+        button { padding: 10px 20px; font-size: 16px; margin-top: 10px; }
+    </style>
+</head>
+<body>
+    <h1>Alpha空投九宫格模拟器</h1>
+    <p>练习你的手速，快速抢空投！尽快点击匹配的“图片”（表情符号）。</p>
+    <div id="prompt"></div>
+    <div id="grid"></div>
+    <div id="timer">时间：0秒</div>
+    <button id="submit">提交验证</button>
+    <div id="result"></div>
+
+    <script>
+        const emojis = ['🚗', '🌳', '🏠', '🐶', '🍎', '📱', '☕', '📚', '🕶️']; // 可能的“图片”
+        let targetEmoji = '';
+        let correctCells = [];
+        let selected = new Set();
+        let startTime;
+        let timerInterval;
+
+        function startSimulator() {
+            document.getElementById('result').innerText = '';
+            document.getElementById('timer').innerText = '时间：0秒';
+            selected.clear();
+            correctCells = [];
+
+            // 随机选择目标
+            targetEmoji = emojis[Math.floor(Math.random() * emojis.length)];
+            document.getElementById('prompt').innerText = `选择所有带有 ${targetEmoji} 的`;
+
+            // 生成网格
+            const grid = document.getElementById('grid');
+            grid.innerHTML = '';
+            for (let i = 0; i < 9; i++) {
+                const emoji = emojis[Math.floor(Math.random() * emojis.length)];
+                const cell = document.createElement('div');
+                cell.className = 'cell';
+                cell.innerText = emoji;
+                cell.dataset.index = i;
+                cell.onclick = () => toggleSelect(i, cell);
+
+                if (emoji === targetEmoji) {
+                    correctCells.push(i);
+                }
+
+                grid.appendChild(cell);
+            }
+
+            // 开始计时
+            startTime = Date.now();
+            timerInterval = setInterval(updateTimer, 100);
+        }
+
+        function toggleSelect(index, cell) {
+            if (selected.has(index)) {
+                selected.delete(index);
+                cell.classList.remove('selected');
+            } else {
+                selected.add(index);
+                cell.classList.add('selected');
+            }
+        }
+
+        function updateTimer() {
+            const elapsed = Math.floor((Date.now() - startTime) / 1000);
+            document.getElementById('timer').innerText = `时间：${elapsed}秒`;
+        }
+
+        function checkVerification() {
+            clearInterval(timerInterval);
+            const elapsed = Math.floor((Date.now() - startTime) / 1000);
+
+            const isCorrect = correctCells.length === selected.size && correctCells.every(i => selected.has(i));
+
+            if (isCorrect) {
+                document.getElementById('result').innerText = `成功！在${elapsed}秒内领取。手速不错！刷新页面继续练习。`;
+            } else {
+                document.getElementById('result').innerText = `验证失败。再试一次！（时间：${elapsed}秒）`;
+            }
+        }
+
+        document.getElementById('submit').onclick = checkVerification;
+        startSimulator(); // 初始启动
+    </script>
+</body>
+</html>
