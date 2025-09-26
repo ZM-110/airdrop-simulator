@@ -4,63 +4,150 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>币安Alpha空投九宫格验证模拟器</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
-        body { font-family: Arial, sans-serif; text-align: center; background-color: #f0f0f0; }
-        #grid { display: grid; grid-template-columns: repeat(3, 100px); gap: 10px; margin: 20px auto; }
-        .cell { width: 100px; height: 100px; font-size: 50px; border: 2px solid #ccc; cursor: pointer; display: flex; align-items: center; justify-content: center; background-color: white; }
-        .selected { border-color: green; }
-        #prompt { font-size: 20px; margin-bottom: 10px; }
-        #timer { font-size: 18px; color: red; }
-        #result { font-size: 18px; margin-top: 20px; }
-        button { padding: 10px 20px; font-size: 16px; margin-top: 10px; }
+        body { 
+            font-family: 'Inter', sans-serif; 
+            text-align: center; 
+            background: linear-gradient(135deg, #0d1117 0%, #21262d 100%); 
+            color: #fff; margin: 0; padding: 20px; min-height: 100vh; 
+        }
+        .header { background: linear-gradient(135deg, #f0b90b, #e0a500); color: #000; padding: 15px; border-radius: 12px 12px 0 0; font-weight: 700; font-size: 18px; margin-bottom: 0; }
+        .container { max-width: 380px; margin: 0 auto; background: #161b22; border-radius: 0 0 16px 16px; padding: 25px; box-shadow: 0 20px 60px rgba(0,0,0,0.4); }
+        h1 { color: #f0b90b; margin: 10px 0 5px 0; font-size: 20px; font-weight: 700; }
+        p { color: #8b949e; margin-bottom: 15px; font-size: 13px; }
+        #prompt { font-size: 16px; color: #f0b90b; margin-bottom: 15px; font-weight: 600; background: #21262d; padding: 12px; border-radius: 6px; border: 1px solid #30363d; }
+        #grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin: 15px auto; background: #21262d; padding: 12px; border-radius: 8px; border: 1px solid #30363d; }
+        .cell { 
+            width: 100px; height: 100px; 
+            border: 1px solid #30363d; 
+            border-radius: 4px; 
+            cursor: pointer; 
+            overflow: hidden; 
+            background: #fff; 
+            transition: all 0.3s ease; 
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        .cell img { width: 100%; height: 100%; object-fit: cover; filter: brightness(0.9); }
+        .cell:hover { transform: scale(1.03); box-shadow: 0 4px 8px rgba(240,185,11,0.2); }
+        .selected { border-color: #f0b90b !important; box-shadow: 0 0 0 2px #f0b90b, 0 4px 12px rgba(240,185,11,0.4); filter: brightness(1.1); }
+        #timer { font-size: 14px; color: #f0b90b; font-weight: 600; margin-bottom: 15px; }
+        button { 
+            background: linear-gradient(135deg, #f0b90b, #e0a500); color: #000; border: none; padding: 14px 28px; font-size: 15px; font-weight: 600; 
+            border-radius: 8px; cursor: pointer; transition: all 0.2s; width: 100%; 
+            box-shadow: 0 4px 12px rgba(240,185,11,0.3);
+        }
+        button:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(240,185,11,0.4); }
+        #result { font-size: 15px; margin-top: 20px; padding: 12px; border-radius: 8px; font-weight: 600; opacity: 0; animation: fadeIn 0.6s ease forwards; }
+        .success { background: #238636; color: #fff; border: 1px solid #2ea043; }
+        .error { background: #da3633; color: #fff; border: 1px solid #f85149; }
+        @keyframes fadeIn { to { opacity: 1; transform: translateY(0); } from { transform: translateY(10px); } }
+        footer { position: fixed; bottom: 15px; left: 50%; transform: translateX(-50%); font-size: 12px; color: #f0b90b; font-weight: 600; z-index: 10; }
+        footer a { color: #f0b90b; text-decoration: none; }
+        @media (max-width: 480px) { .container { padding: 20px; margin: 0 10px; } #grid { gap: 5px; padding: 10px; } .cell { width: 95px; height: 95px; } }
     </style>
 </head>
 <body>
-    <h1>Alpha空投九宫格模拟器</h1>
-    <p>练习你的手速，快速抢空投！尽快点击匹配的“图片”（表情符号）。</p>
-    <div id="prompt"></div>
-    <div id="grid"></div>
-    <div id="timer">时间：0秒</div>
-    <button id="submit">提交验证</button>
-    <div id="result"></div>
+    <div class="header">币安Alpha 空投验证</div>
+    <div class="container">
+        <h1>九宫格模拟器</h1>
+        <p>练习手速，模拟真实验证！快速选择匹配图片。</p>
+        <div id="prompt"></div>
+        <div id="grid"></div>
+        <div id="timer">时间：0秒</div>
+        <button id="submit">提交验证</button>
+        <div id="result"></div>
+    </div>
+    <footer><a href="https://twitter.com/zixuan111799" target="_blank">推特：@zixuan111799</a></footer>
 
     <script>
-        const emojis = ['🚗', '🌳', '🏠', '🐶', '🍎', '📱', '☕', '📚', '🕶️']; // 可能的“图片”
-        let targetEmoji = '';
+        // 精准中文类别与Picsum种子动态图片（稳定无白/空白，街景风格）
+        const imageCategories = {
+            '飞机': 'airplane-street',
+            '船': 'boat-harbor',
+            '自行车': 'bicycle-urban',
+            '公交车': 'bus-city',
+            '汽车': 'car-road',
+            '房屋': 'house-neighborhood',
+            '树木': 'tree-park',
+            '苹果': 'apple-market',
+            '手机': 'phone-street'
+        };
+
+        const targets = Object.keys(imageCategories);
+        let target = '';
         let correctCells = [];
         let selected = new Set();
         let startTime;
         let timerInterval;
 
+        function generateImageUrl(seed, size = '100/100') {
+            return `https://picsum.photos/seed/${seed}/${size}`;
+        }
+
         function startSimulator() {
-            document.getElementById('result').innerText = '';
+            document.getElementById('result').style.opacity = '0';
             document.getElementById('timer').innerText = '时间：0秒';
             selected.clear();
             correctCells = [];
 
-            // 随机选择目标
-            targetEmoji = emojis[Math.floor(Math.random() * emojis.length)];
-            document.getElementById('prompt').innerText = `选择所有带有 ${targetEmoji} 的`;
+            target = targets[Math.floor(Math.random() * targets.length)];
+            document.getElementById('prompt').innerText = `选择所有包含 ${target} 的图片`;
 
-            // 生成网格
             const grid = document.getElementById('grid');
             grid.innerHTML = '';
+
+            let targetCount = Math.floor(Math.random() * 3) + 2; // 2-4匹配
+            let allGridImages = []; // 存储 {src, isMatch}
+
+            // 生成独特匹配图片 (用随机子种子多样)
+            for (let i = 0; i < targetCount; i++) {
+                let subSeed = imageCategories[target] + '-' + Math.random().toString(36).substring(7);
+                let src = generateImageUrl(subSeed);
+                allGridImages.push({ src: src, isMatch: true });
+            }
+
+            // 生成非匹配独特图片
+            let usedSeeds = new Set(allGridImages.map(item => item.src.split('/seed/')[1].split('/')[0]));
+            let nonMatchCount = 9 - targetCount;
+            for (let i = 0; i < nonMatchCount; i++) {
+                let randomTarget;
+                do {
+                    randomTarget = targets[Math.floor(Math.random() * targets.length)];
+                } while (randomTarget === target);
+                let subSeed = imageCategories[randomTarget] + '-' + Math.random().toString(36).substring(7);
+                let src = generateImageUrl(subSeed);
+                let seedCheck = src.split('/seed/')[1].split('/')[0];
+                if (!usedSeeds.has(seedCheck)) {
+                    allGridImages.push({ src: src, isMatch: false });
+                    usedSeeds.add(seedCheck);
+                }
+            }
+
+            // 打乱
+            allGridImages = allGridImages.sort(() => Math.random() - 0.5);
+            console.log('当前网格图片数量:', allGridImages.length); // 调试
+
             for (let i = 0; i < 9; i++) {
-                const emoji = emojis[Math.floor(Math.random() * emojis.length)];
                 const cell = document.createElement('div');
                 cell.className = 'cell';
-                cell.innerText = emoji;
                 cell.dataset.index = i;
+
+                const imgData = allGridImages[i];
+                const img = document.createElement('img');
+                img.src = imgData.src;
+                img.alt = '验证图片';
+                img.onerror = () => { img.src = 'https://picsum.photos/200/300?random=street'; }; // 备用街景
+                cell.appendChild(img);
                 cell.onclick = () => toggleSelect(i, cell);
 
-                if (emoji === targetEmoji) {
+                if (imgData.isMatch) {
                     correctCells.push(i);
                 }
 
                 grid.appendChild(cell);
             }
 
-            // 开始计时
             startTime = Date.now();
             timerInterval = setInterval(updateTimer, 100);
         }
@@ -84,17 +171,25 @@
             clearInterval(timerInterval);
             const elapsed = Math.floor((Date.now() - startTime) / 1000);
 
-            const isCorrect = correctCells.length === selected.size && correctCells.every(i => selected.has(i));
+            const isCorrect = correctCells.length === selected.size && 
+                              correctCells.every(i => selected.has(i)) && 
+                              selected.size > 0;
 
+            const resultDiv = document.getElementById('result');
             if (isCorrect) {
-                document.getElementById('result').innerText = `成功！在${elapsed}秒内领取。手速不错！刷新页面继续练习。`;
+                resultDiv.innerHTML = `✅ 领取成功！${elapsed}秒，神速！`;
+                resultDiv.className = 'success';
             } else {
-                document.getElementById('result').innerText = `验证失败。再试一次！（时间：${elapsed}秒）`;
+                resultDiv.innerHTML = `❌ 验证失败（${selected.size}/${correctCells.length}正确）。时间：${elapsed}秒`;
+                resultDiv.className = 'error';
             }
+
+            // 固定1.5秒后重玩
+            setTimeout(startSimulator, 1500);
         }
 
         document.getElementById('submit').onclick = checkVerification;
-        startSimulator(); // 初始启动
+        startSimulator();
     </script>
 </body>
 </html>
